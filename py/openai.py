@@ -148,7 +148,7 @@ class OpenAIChat:
         modelverse_client = ModelverseClient(api_key)
         
         # Initialize OpenAI client with the API key from ModelverseClient
-        openai_client = openai.OpenAI(api_key=modelverse_client.api_key)
+        openai_client = openai.OpenAI(api_key=modelverse_client.api_key,base_url="https://api.modelverse.cn")
         
         # Update models list with actual available models
         available_models = get_openai_models(modelverse_client.api_key)
@@ -304,7 +304,7 @@ class OpenAICaptionImage:
         img_str = base64.b64encode(buffered.getvalue()).decode("utf-8")
 
         # Set up OpenAI client with ModelverseClient API key
-        openai_client = openai.OpenAI(api_key=modelverse_client.api_key)
+        openai_client = openai.OpenAI(api_key=modelverse_client.api_key,base_url="https://api.modelverse.cn")
 
         # Make API call to OpenAI
         response = openai_client.chat.completions.create(
