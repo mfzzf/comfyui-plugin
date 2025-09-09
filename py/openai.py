@@ -8,6 +8,25 @@ from PIL import Image
 from typing import Optional, List, Dict, Any
 from .modelverse_api.client import ModelverseClient
 
+# Default models list
+DEFAULT_MODELS = [
+    "openai/gpt-5",
+    "openai/gpt-5-mini", 
+    "openai/gpt-4.1",
+    "gpt-4.1-mini",
+    "deepseek-ai/DeepSeek-V3.1",
+    "deepseek-ai/DeepSeek-R1",
+    "Qwen/Qwen3-32B",
+    "gemini-2.5-pro",
+    "gemini-2.5-flash",
+    "claude-4-opus",
+    "claude-4-sonnet",
+    "grok-4"
+]
+
+# Default selected model
+DEFAULT_MODEL = "openai/gpt-5-mini"
+
 # Cache for models list
 _cached_models = None
 
@@ -32,14 +51,13 @@ def get_openai_models(api_key: str) -> List[str]:
         chat_models.sort()
         
         # Cache the result
-        _cached_models = chat_models if chat_models else ["gpt-4o", "gpt-4o-mini", "gpt-4-turbo"]
+        _cached_models = chat_models if chat_models else DEFAULT_MODELS
         return _cached_models
     except Exception as e:
         print(f"Failed to fetch models from OpenAI: {e}")
         # Return default models if API call fails
-        default_models = ["gpt-4o", "gpt-4o-mini", "gpt-4-turbo", "gpt-3.5-turbo"]
-        _cached_models = default_models
-        return default_models
+        _cached_models = DEFAULT_MODELS
+        return DEFAULT_MODELS
 
 
 class OpenAIChat:
@@ -48,12 +66,12 @@ class OpenAIChat:
     @classmethod
     def INPUT_TYPES(cls):
         # Get default models (will be updated when API key is provided)
-        default_models = ["gpt-4o", "gpt-4o-mini", "gpt-4-turbo", "gpt-3.5-turbo"]
+        default_models = DEFAULT_MODELS
         
         return {
             "required": {
                 "client": ("MODELVERSE_API_CLIENT",),
-                "model": (default_models, {"default": "gpt-4o-mini"}),
+                "model": (default_models, {"default": DEFAULT_MODEL}),
                 "user_prompt": ("STRING", {
                     "multiline": True,
                     "default": "What can you tell me about this?"
@@ -255,7 +273,7 @@ class OpenAICaptionImage:
             "required": {
                 "client": ("MODELVERSE_API_CLIENT",),
                 "image_in": ("IMAGE", {}),
-                "model": (["gpt-4o", "gpt-4o-mini", "gpt-4-turbo"], {"default": "gpt-4o-mini"}),
+                "model": (DEFAULT_MODELS, {"default": DEFAULT_MODEL}),
                 "system_prompt": ("STRING", {"default": "You are a helpful assistant."}),
                 "caption_prompt": ("STRING", {"default": "What's in this image?"}),
                 "max_tokens": ("INT", {"default": 300}),
