@@ -21,7 +21,7 @@ def get_openai_models(api_key: str) -> List[str]:
     
     try:
         # Use OpenAI client to get models
-        client = openai.OpenAI(api_key=api_key)
+        client = openai.OpenAI(api_key=api_key,base_url="https://api.modelverse.cn")
         models_response = client.models.list()
         
         # Filter for chat models and sort
