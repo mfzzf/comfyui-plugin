@@ -76,15 +76,17 @@ class OpenAIChat:
     
     @classmethod
     def INPUT_TYPES(cls):
-        # Try to get dynamic models, fallback to default
-        try:
-            # Get models from cache or API if available
-            if _cached_models is not None:
-                available_models = _cached_models
-            else:
-                available_models = DEFAULT_MODELS
-        except Exception:
+        # Dynamic models list that updates based on cache
+        # This is called every time the node is created/refreshed in the UI
+        global _cached_models
+        
+        # Use cached models if available, otherwise use defaults
+        if _cached_models is not None and _cached_models != DEFAULT_MODELS:
+            available_models = _cached_models
+            print(f"Using cached models: {len(available_models)} models available")
+        else:
             available_models = DEFAULT_MODELS
+            print(f"Using default models: {len(available_models)} models")
         
         return {
             "required": {
@@ -142,6 +144,15 @@ class OpenAIChat:
     RETURN_NAMES = ("response",)
     CATEGORY = "UCLOUD_MODELVERSE"
     FUNCTION = "chat"
+    
+    @classmethod
+    def IS_CHANGED(cls, **kwargs):
+        """Tell ComfyUI that this node's inputs may change"""
+        global _cached_models
+        # Return a unique value to force refresh when models change
+        if _cached_models is not None:
+            return str(len(_cached_models))
+        return "default"
 
     def chat(self, 
              client: Dict[str, str],
@@ -386,10 +397,14 @@ class ModelListRefresh:
             # Refresh models using OpenAIChat's method
             models = OpenAIChat.refresh_models(modelverse_client.api_key)
             
-            return (f"Successfully refreshed models list. Found {len(models)} models: {', '.join(models[:5])}{'...' if len(models) > 5 else ''}",)
+            status_msg = f"✅ Successfully refreshed! Found {len(models)} models.\n"
+            status_msg += f"Models: {', '.join(models[:10])}{'...' if len(models) > 10 else ''}\n"
+            status_msg += "\n⚠️ IMPORTANT: Please refresh the OpenAI Chat node in ComfyUI to see the updated models list!"
+            
+            return (status_msg,)
             
         except Exception as e:
-            return (f"Error refreshing models: {str(e)}",)
+            return (f"❌ Error refreshing models: {str(e)}",)
 
 
 # Node registration
