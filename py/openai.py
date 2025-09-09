@@ -43,11 +43,8 @@ def get_openai_models(api_key: str) -> List[str]:
         client = openai.OpenAI(api_key=api_key,base_url="https://api.modelverse.cn/v1")
         models_response = client.models.list()
         
-        # Filter for chat models and sort
-        chat_models = [
-            model.id for model in models_response.data 
-            if 'gpt' in model.id.lower() or 'o1' in model.id.lower() or 'chatgpt' in model.id.lower()
-        ]
+        # Get all available models and sort
+        chat_models = [model.id for model in models_response.data]
         chat_models.sort()
         
         # Cache the result
