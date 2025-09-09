@@ -25,7 +25,7 @@ DEFAULT_MODELS = [
 ]
 
 # Default selected model
-DEFAULT_MODEL = "openai/gpt-5-mini"
+DEFAULT_MODEL = "gemini-2.5-flash"
 
 # Cache for models list
 _cached_models = None
@@ -60,15 +60,36 @@ def get_openai_models(api_key: str) -> List[str]:
 class OpenAIChat:
     """OpenAI Chat node with support for text, images, and files"""
     
+    @staticmethod
+    def refresh_models(api_key: str):
+        """Refresh the cached models list with the given API key"""
+        global _cached_models
+        try:
+            _cached_models = None  # Clear cache first
+            _cached_models = get_openai_models(api_key)
+            print(f"Successfully refreshed models list: {len(_cached_models)} models available")
+            return _cached_models
+        except Exception as e:
+            print(f"Failed to refresh models: {e}")
+            _cached_models = DEFAULT_MODELS
+            return DEFAULT_MODELS
+    
     @classmethod
     def INPUT_TYPES(cls):
-        # Get default models (will be updated when API key is provided)
-        default_models = DEFAULT_MODELS
+        # Try to get dynamic models, fallback to default
+        try:
+            # Get models from cache or API if available
+            if _cached_models is not None:
+                available_models = _cached_models
+            else:
+                available_models = DEFAULT_MODELS
+        except Exception:
+            available_models = DEFAULT_MODELS
         
         return {
             "required": {
                 "client": ("MODELVERSE_API_CLIENT",),
-                "model": (default_models, {"default": DEFAULT_MODEL}),
+                "model": (available_models, {"default": DEFAULT_MODEL}),
                 "user_prompt": ("STRING", {
                     "multiline": True,
                     "default": "What can you tell me about this?"
@@ -144,15 +165,16 @@ class OpenAIChat:
         # Create ModelverseClient instance to get the actual API key
         modelverse_client = ModelverseClient(api_key)
         
+        # Refresh models list if not cached yet or if this is the first time with this API key
+        global _cached_models
+        if _cached_models is None or _cached_models == DEFAULT_MODELS:
+            print("INFO: Refreshing models list from API...")
+            self.refresh_models(modelverse_client.api_key)
+        
         # Initialize OpenAI client with the API key from ModelverseClient
         openai_client = openai.OpenAI(api_key=modelverse_client.api_key,base_url="https://api.modelverse.cn/v1")
         
-        # Update models list with actual available models
-        available_models = get_openai_models(modelverse_client.api_key)
-        
-        # Check if the selected model is available
-        if model not in available_models:
-            print(f"Warning: Model '{model}' may not be available. Available models: {available_models}")
+        # Model validation is handled at the input level, no need to check here
         
         # Build messages
         messages = []
@@ -331,13 +353,54 @@ class OpenAICaptionImage:
         return (caption,)
 
 
+class ModelListRefresh:
+    """Helper node to refresh the available models list"""
+    
+    @classmethod
+    def INPUT_TYPES(cls):
+        return {
+            "required": {
+                "client": ("MODELVERSE_API_CLIENT",),
+                "refresh": ("BOOLEAN", {"default": True, "tooltip": "Click to refresh models list"}),
+            }
+        }
+    
+    RETURN_TYPES = ("STRING",)
+    RETURN_NAMES = ("status",)
+    CATEGORY = "UCLOUD_MODELVERSE"
+    FUNCTION = "refresh_models_list"
+    
+    def refresh_models_list(self, client: Dict[str, str], refresh: bool) -> tuple:
+        """Refresh the models list and return status"""
+        if not refresh:
+            return ("Models refresh skipped",)
+            
+        api_key = client.get("api_key")
+        if not api_key:
+            return ("Error: No API key found in the client",)
+        
+        try:
+            # Create ModelverseClient instance
+            modelverse_client = ModelverseClient(api_key)
+            
+            # Refresh models using OpenAIChat's method
+            models = OpenAIChat.refresh_models(modelverse_client.api_key)
+            
+            return (f"Successfully refreshed models list. Found {len(models)} models: {', '.join(models[:5])}{'...' if len(models) > 5 else ''}",)
+            
+        except Exception as e:
+            return (f"Error refreshing models: {str(e)}",)
+
+
 # Node registration
 NODE_CLASS_MAPPINGS = {
     "OpenAIChat": OpenAIChat,
     "OpenAICaptionImage": OpenAICaptionImage,
+    "ModelListRefresh": ModelListRefresh,
 }
 
 NODE_DISPLAY_NAME_MAPPINGS = {
     "OpenAIChat": "OpenAI Chat",
     "OpenAICaptionImage": "OpenAI Caption Image",
+    "ModelListRefresh": "🔄 Refresh Models List",
 }
