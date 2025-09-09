@@ -29,6 +29,7 @@ DEFAULT_MODEL = "gemini-2.5-flash"
 
 # Cache for models list
 _cached_models = None
+_models_initialized = False
 
 def debug_cache_state():
     """Debug function to print cache state"""
@@ -83,6 +84,9 @@ def get_openai_models(api_key: str) -> List[str]:
 class OpenAIChat:
     """OpenAI Chat node with support for text, images, and files"""
     
+    # Class variable to store the current models list for this node type
+    _current_models = DEFAULT_MODELS
+    
     @staticmethod
     def refresh_models(api_key: str):
         """Refresh the cached models list with the given API key"""
@@ -101,11 +105,14 @@ class OpenAIChat:
             print(f"[DEBUG] After get_openai_models:")
             debug_cache_state()
             
+            # Also update the class variable
+            OpenAIChat._current_models = _cached_models
             print(f"Successfully refreshed models list: {len(_cached_models)} models available")
             return _cached_models
         except Exception as e:
             print(f"[ERROR] Failed to refresh models: {e}")
             _cached_models = DEFAULT_MODELS
+            OpenAIChat._current_models = DEFAULT_MODELS
             print(f"[DEBUG] Set to DEFAULT_MODELS due to error:")
             debug_cache_state()
             return DEFAULT_MODELS
@@ -119,16 +126,20 @@ class OpenAIChat:
         print(f"[DEBUG] INPUT_TYPES called for OpenAIChat")
         print(f"[DEBUG] Current cache state in INPUT_TYPES:")
         debug_cache_state()
+        print(f"[DEBUG] Class _current_models: {cls._current_models}")
         
-        # Use cached models if available, otherwise use defaults
+        # Priority: cached_models > class variable > defaults
         if _cached_models is not None and _cached_models != DEFAULT_MODELS:
             available_models = _cached_models
-            print(f"[INFO] Using cached models: {len(available_models)} models available")
-            print(f"[DEBUG] Cached models: {available_models}")
+            print(f"[INFO] Using global cached models: {len(available_models)} models available")
+        elif cls._current_models != DEFAULT_MODELS:
+            available_models = cls._current_models
+            print(f"[INFO] Using class models: {len(available_models)} models available")
         else:
             available_models = DEFAULT_MODELS
             print(f"[INFO] Using default models: {len(available_models)} models")
-            print(f"[DEBUG] Default models: {available_models}")
+            
+        print(f"[DEBUG] Final available_models: {available_models}")
         
         return {
             "required": {
@@ -457,7 +468,10 @@ class ModelListRefresh:
             
             status_msg = f"✅ Successfully refreshed! Found {len(models)} models.\n"
             status_msg += f"Models: {', '.join(models[:10])}{'...' if len(models) > 10 else ''}\n"
-            status_msg += "\n⚠️ IMPORTANT: Please refresh the OpenAI Chat node in ComfyUI to see the updated models list!"
+            status_msg += f"\n🔄 Global cache updated: {len(_cached_models) if _cached_models else 0} models"
+            status_msg += f"\n🏷️ Class models updated: {len(OpenAIChat._current_models)} models"
+            status_msg += "\n\n⚠️ IMPORTANT: Please add a new OpenAI Chat node to see the updated models list!"
+            status_msg += "\n(Or right-click existing node → 'Reload' if available)"
             
             return (status_msg,)
             
