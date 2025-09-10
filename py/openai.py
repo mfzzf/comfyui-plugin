@@ -199,6 +199,7 @@ class OpenAIChat:
         
         # Add file content if provided
         if files:
+            print(f"OpenAIChat: Processing {len(files)} files")
             for file_info in files:
                 if isinstance(file_info, dict) and "content" in file_info and "filename" in file_info:
                     file_text = f"\n\nFile: {file_info['filename']}\nContent:\n{file_info['content']}"
@@ -206,6 +207,11 @@ class OpenAIChat:
                         "type": "text",
                         "text": file_text
                     })
+                    print(f"OpenAIChat: Added file {file_info['filename']} with {len(file_info['content'])} characters")
+                else:
+                    print(f"OpenAIChat: Invalid file format: {file_info}")
+        else:
+            print("OpenAIChat: No files provided")
         
         # Add image if provided
         if image_in is not None:
@@ -316,10 +322,11 @@ class OpenAIInputFiles:
             "required": {},
             "optional": {
                 "file": (
-                    input_files,
+                    IO.COMBO,
                     {
-                        "tooltip": "Input files to include as context for the model. Only accepts text (.txt), markdown (.md) and PDF (.pdf) files for now.",
+                        "options": input_files,
                         "default": input_files[0] if input_files else None,
+                        "tooltip": "Input files to include as context for the model. Only accepts text (.txt), markdown (.md) and PDF (.pdf) files for now.",
                     },
                 ),
                 "OPENAI_INPUT_FILES": (
@@ -369,15 +376,21 @@ class OpenAIInputFiles:
         files = []
         
         # Add current file if provided
-        if file is not None:
-            file_path = folder_paths.get_annotated_filepath(file)
-            input_file_content = self.create_input_file_content(file_path)
-            files.append(input_file_content)
+        if file is not None and file != "":
+            try:
+                file_path = folder_paths.get_annotated_filepath(file)
+                input_file_content = self.create_input_file_content(file_path)
+                files.append(input_file_content)
+                print(f"OpenAIInputFiles: Successfully loaded file {file}")
+            except Exception as e:
+                print(f"OpenAIInputFiles: Error loading file {file}: {str(e)}")
         
         # Add previous files if provided
         if OPENAI_INPUT_FILES is not None:
             files.extend(OPENAI_INPUT_FILES)
+            print(f"OpenAIInputFiles: Added {len(OPENAI_INPUT_FILES)} previous files")
         
+        print(f"OpenAIInputFiles: Returning {len(files)} files total")
         return (files,)
 
 
