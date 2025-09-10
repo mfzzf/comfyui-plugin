@@ -313,7 +313,8 @@ class OpenAIInputFiles:
         input_files = sorted(input_files, key=lambda x: x.name)
         input_files = [f.name for f in input_files]
         return {
-            "required": {
+            "required": {},
+            "optional": {
                 "file": (
                     input_files,
                     {
@@ -321,8 +322,6 @@ class OpenAIInputFiles:
                         "default": input_files[0] if input_files else None,
                     },
                 ),
-            },
-            "optional": {
                 "OPENAI_INPUT_FILES": (
                     "OPENAI_INPUT_FILES",
                     {
@@ -362,18 +361,22 @@ class OpenAIInputFiles:
         }
 
     def prepare_files(
-        self, file: str, OPENAI_INPUT_FILES: List[Dict[str, str]] = None
+        self, file: str = None, OPENAI_INPUT_FILES: List[Dict[str, str]] = None
     ) -> tuple:
         """
         Loads and formats input files for OpenAI API.
         """
-        file_path = folder_paths.get_annotated_filepath(file)
-        input_file_content = self.create_input_file_content(file_path)
+        files = []
         
-        if OPENAI_INPUT_FILES is None:
-            files = [input_file_content]
-        else:
-            files = [input_file_content] + OPENAI_INPUT_FILES
+        # Add current file if provided
+        if file is not None:
+            file_path = folder_paths.get_annotated_filepath(file)
+            input_file_content = self.create_input_file_content(file_path)
+            files.append(input_file_content)
+        
+        # Add previous files if provided
+        if OPENAI_INPUT_FILES is not None:
+            files.extend(OPENAI_INPUT_FILES)
         
         return (files,)
 
