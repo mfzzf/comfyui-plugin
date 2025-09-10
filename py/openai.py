@@ -64,7 +64,7 @@ DEFAULT_MODELS = [
 DEFAULT_MODEL = "gemini-2.5-flash"
 
 
-class OpenAIChat:
+class ModelverseChat:
     """OpenAI Chat node with support for text, images, and files"""
     
     def __init__(self):
@@ -319,7 +319,7 @@ class OpenAIChat:
             return (error_msg,)
 
 
-class OpenAIInputFiles:
+class ModelverseInputFiles:
     """
     Loads and formats input files for OpenAI API.
     """
@@ -434,13 +434,13 @@ class OpenAIInputFiles:
 
 # Node registration
 NODE_CLASS_MAPPINGS = {
-    "OpenAIChat": OpenAIChat,
-    "OpenAIInputFiles": OpenAIInputFiles,
+    "ModelverseChat": ModelverseChat,
+    "ModelverseInputFiles": ModelverseInputFiles,
     # "OpenAICaptionImage": OpenAICaptionImage,
 }
 
 NODE_DISPLAY_NAME_MAPPINGS = {
-    "OpenAIChat": "OpenAI Chat",
-    "OpenAIInputFiles": "OpenAI Input Files",
+    "ModelverseChat": "Modelverse Chat",
+    "ModelverseInputFiles": "Modelverse Input Files",
     # "OpenAICaptionImage": "OpenAI Caption Image",
 }
