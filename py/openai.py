@@ -7,6 +7,7 @@ import numpy as np
 from PIL import Image
 from typing import Optional, List, Dict, Any
 from .modelverse_api.client import ModelverseClient
+from comfy.comfy_types.node_typing import IO
 
 # Hardcoded models list
 DEFAULT_MODELS = [
@@ -71,22 +72,22 @@ class OpenAIChat:
             "required": {
                 "client": ("MODELVERSE_API_CLIENT",),
                 "model": (DEFAULT_MODELS, {"default": DEFAULT_MODEL}),
-                "user_prompt": ("STRING", {
+                "user_prompt": (IO.STRING, {
                     "multiline": True,
                     "default": "What can you tell me about this?"
                 }),
-                "temperature": ("FLOAT", {
+                "temperature": (IO.FLOAT, {
                     "default": 0.7,
                     "min": 0.0,
                     "max": 2.0,
                     "step": 0.1
                 }),
-                "max_tokens": ("INT", {
+                "max_tokens": (IO.INT, {
                     "default": 1000,
                     "min": 1,
                     "max": 128000
                 }),
-                "top_p": ("FLOAT", {
+                "top_p": (IO.FLOAT, {
                     "default": 1.0,
                     "min": 0.0,
                     "max": 1.0,
@@ -94,23 +95,23 @@ class OpenAIChat:
                 }),
             },
             "optional": {
-                "system_prompt": ("STRING", {
+                "system_prompt": (IO.STRING, {
                     "multiline": True,
                     "default": "You are a helpful assistant."
                 }),
-                "image_in": ("IMAGE", {}),
-                "file_content": ("STRING", {
+                "image_in": (IO.IMAGE, {}),
+                "file_content": (IO.STRING, {
                     "multiline": True,
                     "tooltip": "Text content from a file to include in the conversation"
                 }),
                 "response_format": (["text", "json_object"], {"default": "text"}),
-                "presence_penalty": ("FLOAT", {
+                "presence_penalty": (IO.FLOAT, {
                     "default": 0.0,
                     "min": -2.0,
                     "max": 2.0,
                     "step": 0.1
                 }),
-                "frequency_penalty": ("FLOAT", {
+                "frequency_penalty": (IO.FLOAT, {
                     "default": 0.0,
                     "min": -2.0,
                     "max": 2.0,
@@ -119,7 +120,7 @@ class OpenAIChat:
             }
         }
 
-    RETURN_TYPES = ("STRING",)
+    RETURN_TYPES = (IO.STRING,)
     RETURN_NAMES = ("response",)
     CATEGORY = "UCLOUD_MODELVERSE"
     FUNCTION = "chat"
@@ -261,82 +262,14 @@ class OpenAIChat:
             return (error_msg,)
 
 
-class OpenAICaptionImage:
-    """Legacy node for image captioning - kept for compatibility"""
-    
-    @classmethod
-    def INPUT_TYPES(cls):
-        return {
-            "required": {
-                "client": ("MODELVERSE_API_CLIENT",),
-                "image_in": ("IMAGE", {}),
-                "model": (DEFAULT_MODELS, {"default": DEFAULT_MODEL}),
-                "system_prompt": ("STRING", {"default": "You are a helpful assistant."}),
-                "caption_prompt": ("STRING", {"default": "What's in this image?"}),
-                "max_tokens": ("INT", {"default": 300}),
-                "temperature": ("FLOAT", {"default": 0.5}),
-            },
-        }
-
-    RETURN_TYPES = ("STRING",)
-    RETURN_NAMES = ("text_out",)
-    CATEGORY = "UCLOUD_MODELVERSE"
-    FUNCTION = "caption"
-
-    def caption(self, client, image_in, model, system_prompt, caption_prompt, max_tokens, temperature):
-        # Create ModelverseClient and get API key
-        api_key = client.get("api_key")
-        if not api_key:
-            raise ValueError("No API key found in the client")
-            
-        # Create ModelverseClient instance to get the actual API key
-        modelverse_client = ModelverseClient(api_key)
-        
-        # Convert tensor to PIL Image
-        pil_image = Image.fromarray(np.clip(255. * image_in.cpu().numpy().squeeze(), 0, 255).astype(np.uint8))
-        
-        # Convert PIL Image to base64
-        buffered = io.BytesIO()
-        pil_image.save(buffered, format="PNG")
-        img_str = base64.b64encode(buffered.getvalue()).decode("utf-8")
-
-        # Set up OpenAI client with ModelverseClient API key
-        openai_client = openai.OpenAI(api_key=modelverse_client.api_key,base_url="https://api.modelverse.cn/v1")
-
-        # Make API call to OpenAI
-        response = openai_client.chat.completions.create(
-            model=model,
-            messages=[
-                {
-                    "role": "system",
-                    "content": system_prompt
-                },
-                {
-                    "role": "user",
-                    "content": [
-                        {"type": "text", "text": caption_prompt},
-                        {"type": "image_url", "image_url": {"url": f"data:image/png;base64,{img_str}"}}
-                    ],
-                }
-            ],
-            max_tokens=max_tokens,
-            temperature=temperature,
-        )
-        
-        if response.choices[0].message.content is None:
-            raise ValueError("No content in response")
-
-        # Extract and return the caption
-        caption = response.choices[0].message.content.strip()
-        return (caption,)
 
 # Node registration
 NODE_CLASS_MAPPINGS = {
     "OpenAIChat": OpenAIChat,
-    "OpenAICaptionImage": OpenAICaptionImage,
+    # "OpenAICaptionImage": OpenAICaptionImage,
 }
 
 NODE_DISPLAY_NAME_MAPPINGS = {
     "OpenAIChat": "OpenAI Chat",
-    "OpenAICaptionImage": "OpenAI Caption Image",
+    # "OpenAICaptionImage": "OpenAI Caption Image",
 }

@@ -2,8 +2,7 @@ from .modelverse_api.utils import imageurl2tensor
 from .modelverse_api.client import ModelverseClient
 from .modelverse_api.requests.flux_kontext_max import FluxKontextMaxT2I
 import torch
-import asyncio
-
+from comfy.comfy_types.node_typing import IO
 
 class FluxKontextMaxT2INode:
     """
@@ -18,12 +17,12 @@ class FluxKontextMaxT2INode:
         return {
             "required": {
                 "client": ("MODELVERSE_API_CLIENT",),
-                "prompt": ("STRING", {"multiline": True, "default": "", "tooltip": "Text description of the image to generate"}),
+                "prompt": (IO.STRING, {"multiline": True, "default": "", "tooltip": "Text description of the image to generate"}),
                 "aspect_ratio": (["21:9", "16:9", "16:10", "4:3", "1:1", "3:4", "10:16", "9:16", "9:21"], {
                     "default": "1:1",
                     "tooltip": "The aspect ratio of the output image, ranging from \"21:9\" to \"9:21\", default is \"1:1\""
                 }),
-                "num_images": ("INT", {
+                "num_images": (IO.INT, {
                     "default": 1,
                     "min": 1,
                     "max": 4,
@@ -31,7 +30,7 @@ class FluxKontextMaxT2INode:
                     "display": "number",
                     "tooltip": "Number of images to generate in a single request (1 to 4)"
                 }),
-                "num_requests": ("INT", {
+                "num_requests": (IO.INT, {
                     "default": 1,
                     "min": 1,
                     "max": 10,
@@ -39,14 +38,14 @@ class FluxKontextMaxT2INode:
                     "display": "number",
                     "tooltip": "Number of request to make (1 to 10)"
                 }),
-                "seed": ("INT", {
+                "seed": (IO.INT, {
                     "default": -1,
                     "min": -1,
                     "max": 0xffffffffffffffff,
                     "control_after_generate": True,
                     "tooltip": "Random seed for reproducible results. -1 for random seed"
                 }),
-                "guidance_scale": ("FLOAT", {
+                "guidance_scale": (IO.FLOAT, {
                     "default": 2.5,
                     "min": 0.0,
                     "max": 10.0,
@@ -71,20 +70,6 @@ class FluxKontextMaxT2INode:
                 aspect_ratio="1:1",
                 seed=-1,
                 guidance_scale=3.5):
-
-        print(f"DEBUG: Received prompt type: {type(prompt)}, value: {repr(prompt)}")
-        
-        # Handle the case where prompt might be a tuple from OpenAI chat node
-        if isinstance(prompt, tuple) and len(prompt) > 0:
-            prompt = prompt[0]
-        elif isinstance(prompt, list) and len(prompt) > 0:
-            prompt = prompt[0]
-        
-        # Convert to string if it's not already
-        if prompt is not None:
-            prompt = str(prompt).strip()
-        
-        print(f"DEBUG: After processing - prompt type: {type(prompt)}, value: {repr(prompt)}")
 
         if prompt is None or prompt == "":
             raise ValueError("Prompt is required")

@@ -4,7 +4,7 @@ import os
 import tempfile
 import io
 from .modelverse_api.client import ModelverseClient
-
+from comfy.comfy_types.node_typing import IO
 # Import VideoFromFile class for ComfyUI video handling
 try:
     # Try the newer import path first
@@ -25,15 +25,15 @@ class Modelverse_WanAIT2V:
         return {
             "required": {
                 "client": ("MODELVERSE_API_CLIENT",),
-                "prompt": ("STRING", {"multiline": True, "default": "a beautiful flower","tooltip": "Text prompt of the image to generate"}),
-                "negative_prompt": ("STRING", {"multiline": True, "default": "low quality","tooltip": "Negative prompt of the image to generate"}),
+                "prompt": (IO.STRING, {"multiline": True, "default": "a beautiful flower","tooltip": "Text prompt of the image to generate"}),
+                "negative_prompt": (IO.STRING, {"multiline": True, "default": "low quality","tooltip": "Negative prompt of the image to generate"}),
                 "resolution": (["720P", "480P"], {"default": "720P"}),
                 "size": (["1280x720", "720x1280", "832x480", "480x832"], {"default": "1280x720"}),
-                "seed": ("INT", {"default": 0, "min": 0, "max": 2147483647}),
+                "seed": (IO.INT, {"default": 0, "min": 0, "max": 2147483647}),
             }
         }
 
-    RETURN_TYPES = ("VIDEO",)
+    RETURN_TYPES = (IO.VIDEO,)
     RETURN_NAMES = ("video",)
     FUNCTION = "generate_video"
     CATEGORY = "UCLOUD_MODELVERSE"
