@@ -9,6 +9,7 @@ from typing import Optional, List, Dict, Any
 from .modelverse_api.client import ModelverseClient
 from comfy.comfy_types.node_typing import IO
 from server import PromptServer
+import folder_paths
 
 # Hardcoded models list
 DEFAULT_MODELS = [
@@ -118,9 +119,9 @@ class OpenAIChat:
                     "default": "You are a helpful assistant."
                 }),
                 "image_in": (IO.IMAGE, {}),
-                "file_content": (IO.STRING, {
-                    "multiline": True,
-                    "tooltip": "Text content from a file to include in the conversation"
+                "files": ("OPENAI_INPUT_FILES", {
+                    "default": None,
+                    "tooltip": "Optional file(s) to use as context for the model. Accepts inputs from the OpenAI Input Files node."
                 }),
                 "response_format": (["text", "json_object"], {"default": "text"}),
                 "presence_penalty": (IO.FLOAT, {
@@ -161,7 +162,7 @@ class OpenAIChat:
              unique_id: Optional[str] = None,
              system_prompt: Optional[str] = "You are a helpful assistant.",
              image_in: Optional[Any] = None,
-             file_content: Optional[str] = None,
+             files: Optional[List[Dict[str, str]]] = None,
              response_format: str = "text",
              presence_penalty: float = 0.0,
              frequency_penalty: float = 0.0) -> tuple:
@@ -197,12 +198,14 @@ class OpenAIChat:
         })
         
         # Add file content if provided
-        if file_content:
-            file_text = f"\n\nFile content:\n{file_content}"
-            user_content.append({
-                "type": "text",
-                "text": file_text
-            })
+        if files:
+            for file_info in files:
+                if isinstance(file_info, dict) and "content" in file_info and "filename" in file_info:
+                    file_text = f"\n\nFile: {file_info['filename']}\nContent:\n{file_info['content']}"
+                    user_content.append({
+                        "type": "text",
+                        "text": file_text
+                    })
         
         # Add image if provided
         if image_in is not None:
@@ -288,14 +291,103 @@ class OpenAIChat:
             return (error_msg,)
 
 
+class OpenAIInputFiles:
+    """
+    Loads and formats input files for OpenAI API.
+    """
+
+    @classmethod
+    def INPUT_TYPES(cls):
+        """
+        For details about the supported file input types, see:
+        https://platform.openai.com/docs/guides/pdf-files?api-mode=responses
+        """
+        input_dir = folder_paths.get_input_directory()
+        input_files = [
+            f
+            for f in os.scandir(input_dir)
+            if f.is_file()
+            and (f.name.endswith(".txt") or f.name.endswith(".pdf") or f.name.endswith(".md"))
+            and f.stat().st_size < 32 * 1024 * 1024
+        ]
+        input_files = sorted(input_files, key=lambda x: x.name)
+        input_files = [f.name for f in input_files]
+        return {
+            "required": {
+                "file": (
+                    input_files,
+                    {
+                        "tooltip": "Input files to include as context for the model. Only accepts text (.txt), markdown (.md) and PDF (.pdf) files for now.",
+                        "default": input_files[0] if input_files else None,
+                    },
+                ),
+            },
+            "optional": {
+                "OPENAI_INPUT_FILES": (
+                    "OPENAI_INPUT_FILES",
+                    {
+                        "tooltip": "An optional additional file(s) to batch together with the file loaded from this node. Allows chaining of input files so that a single message can include multiple input files.",
+                        "default": None,
+                    },
+                ),
+            },
+        }
+
+    DESCRIPTION = "Loads and prepares input files (text, markdown, pdf, etc.) to include as inputs for the OpenAI Chat Node. The files will be read by the OpenAI model when generating a response. 🛈 TIP: Can be chained together with other OpenAI Input File nodes."
+    RETURN_TYPES = ("OPENAI_INPUT_FILES",)
+    FUNCTION = "prepare_files"
+    CATEGORY = "UCLOUD_MODELVERSE"
+
+    def read_file_content(self, file_path: str) -> str:
+        """Read content from a file."""
+        try:
+            with open(file_path, 'r', encoding='utf-8') as f:
+                return f.read()
+        except UnicodeDecodeError:
+            # Try with different encoding if UTF-8 fails
+            try:
+                with open(file_path, 'r', encoding='gbk') as f:
+                    return f.read()
+            except:
+                return f"Error: Unable to read file {file_path} - encoding issue"
+        except Exception as e:
+            return f"Error reading file {file_path}: {str(e)}"
+
+    def create_input_file_content(self, file_path: str) -> Dict[str, str]:
+        """Create a file content dictionary."""
+        content = self.read_file_content(file_path)
+        return {
+            "content": content,
+            "filename": os.path.basename(file_path),
+        }
+
+    def prepare_files(
+        self, file: str, OPENAI_INPUT_FILES: List[Dict[str, str]] = None
+    ) -> tuple:
+        """
+        Loads and formats input files for OpenAI API.
+        """
+        file_path = folder_paths.get_annotated_filepath(file)
+        input_file_content = self.create_input_file_content(file_path)
+        
+        if OPENAI_INPUT_FILES is None:
+            files = [input_file_content]
+        else:
+            files = [input_file_content] + OPENAI_INPUT_FILES
+        
+        return (files,)
+
+
 
 # Node registration
 NODE_CLASS_MAPPINGS = {
     "OpenAIChat": OpenAIChat,
+    "OpenAIInputFiles": OpenAIInputFiles,
     # "OpenAICaptionImage": OpenAICaptionImage,
 }
 
 NODE_DISPLAY_NAME_MAPPINGS = {
     "OpenAIChat": "OpenAI Chat",
+    "OpenAIInputFiles": "OpenAI Input Files",
     # "OpenAICaptionImage": "OpenAI Caption Image",
 }
