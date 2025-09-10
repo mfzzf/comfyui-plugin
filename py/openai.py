@@ -162,7 +162,7 @@ class OpenAIChat:
              unique_id: Optional[str] = None,
              system_prompt: Optional[str] = "You are a helpful assistant.",
              image_in: Optional[Any] = None,
-             files: Optional[List[Dict[str, str]]] = None,
+             files: Optional[List[Any]] = None,
              response_format: str = "text",
              presence_penalty: float = 0.0,
              frequency_penalty: float = 0.0) -> tuple:
@@ -201,7 +201,29 @@ class OpenAIChat:
         if files:
             print(f"OpenAIChat: Processing {len(files)} files")
             for file_info in files:
-                if isinstance(file_info, dict) and "content" in file_info and "filename" in file_info:
+                # Handle the actual file format from OpenAIInputFiles
+                if hasattr(file_info, 'file_data') and hasattr(file_info, 'filename'):
+                    # Decode base64 content
+                    try:
+                        # Extract base64 data (remove data:text/plain;base64, prefix)
+                        if file_info.file_data.startswith('data:'):
+                            base64_data = file_info.file_data.split(',', 1)[1]
+                        else:
+                            base64_data = file_info.file_data
+                        
+                        # Decode base64 to text
+                        content = base64.b64decode(base64_data).decode('utf-8')
+                        
+                        file_text = f"\n\nFile: {file_info.filename}\nContent:\n{content}"
+                        user_content.append({
+                            "type": "text",
+                            "text": file_text
+                        })
+                        print(f"OpenAIChat: Added file {file_info.filename} with {len(content)} characters")
+                    except Exception as e:
+                        print(f"OpenAIChat: Error decoding file {file_info.filename}: {str(e)}")
+                elif isinstance(file_info, dict) and "content" in file_info and "filename" in file_info:
+                    # Handle simple dict format (backup)
                     file_text = f"\n\nFile: {file_info['filename']}\nContent:\n{file_info['content']}"
                     user_content.append({
                         "type": "text",
@@ -359,16 +381,31 @@ class OpenAIInputFiles:
         except Exception as e:
             return f"Error reading file {file_path}: {str(e)}"
 
-    def create_input_file_content(self, file_path: str) -> Dict[str, str]:
-        """Create a file content dictionary."""
+    def text_to_data_uri(self, content: str) -> str:
+        """Convert text content to data URI."""
+        encoded_content = base64.b64encode(content.encode('utf-8')).decode('ascii')
+        return f"data:text/plain;base64,{encoded_content}"
+
+    def create_input_file_content(self, file_path: str):
+        """Create a file content object compatible with the reference implementation."""
         content = self.read_file_content(file_path)
-        return {
-            "content": content,
-            "filename": os.path.basename(file_path),
-        }
+        
+        # Create a simple object that mimics the expected structure
+        class InputFileContent:
+            def __init__(self, content, filename):
+                self.file_data = self.text_to_data_uri(content)
+                self.filename = filename
+                self.type = "input_file"
+                self.file_id = None
+            
+            def text_to_data_uri(self, content: str) -> str:
+                encoded_content = base64.b64encode(content.encode('utf-8')).decode('ascii')
+                return f"data:text/plain;base64,{encoded_content}"
+        
+        return InputFileContent(content, os.path.basename(file_path))
 
     def prepare_files(
-        self, file: str = None, OPENAI_INPUT_FILES: List[Dict[str, str]] = None
+        self, file: str = None, OPENAI_INPUT_FILES: List[Any] = None
     ) -> tuple:
         """
         Loads and formats input files for OpenAI API.
