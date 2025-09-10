@@ -8,6 +8,7 @@ from PIL import Image
 from typing import Optional, List, Dict, Any
 from .modelverse_api.client import ModelverseClient
 from comfy.comfy_types.node_typing import IO
+from server import PromptServer
 
 # Hardcoded models list
 DEFAULT_MODELS = [
@@ -65,6 +66,23 @@ DEFAULT_MODEL = "gemini-2.5-flash"
 class OpenAIChat:
     """OpenAI Chat node with support for text, images, and files"""
     
+    def __init__(self):
+        pass
+    
+    def display_message_on_node(self, message: str, node_id: str) -> None:
+        """Display the current response message on the node UI."""
+        render_spec = {
+            "node_id": node_id,
+            "component": "MessageDisplayWidget",
+            "props": {
+                "message": message,
+            },
+        }
+        PromptServer.instance.send_sync(
+            "display_component",
+            render_spec,
+        )
+    
     
     @classmethod
     def INPUT_TYPES(cls):
@@ -117,7 +135,10 @@ class OpenAIChat:
                     "max": 2.0,
                     "step": 0.1
                 }),
-            }
+            },
+            "hidden": {
+                "unique_id": "UNIQUE_ID",
+            },
         }
 
     RETURN_TYPES = (IO.STRING,)
@@ -137,6 +158,7 @@ class OpenAIChat:
              temperature: float,
              max_tokens: int,
              top_p: float,
+             unique_id: Optional[str] = None,
              system_prompt: Optional[str] = "You are a helpful assistant.",
              image_in: Optional[Any] = None,
              file_content: Optional[str] = None,
@@ -250,6 +272,10 @@ class OpenAIChat:
                 content = response.choices[0].message.content
                 if content is None:
                     raise ValueError("No content in response")
+                
+                # Display the response message on the node UI
+                if unique_id:
+                    self.display_message_on_node(content.strip(), unique_id)
                 
                 # Return the response as a tuple
                 return (content.strip(),)
