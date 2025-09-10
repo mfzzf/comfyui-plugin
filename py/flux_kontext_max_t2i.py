@@ -72,6 +72,20 @@ class FluxKontextMaxT2INode:
                 seed=-1,
                 guidance_scale=3.5):
 
+        print(f"DEBUG: Received prompt type: {type(prompt)}, value: {repr(prompt)}")
+        
+        # Handle the case where prompt might be a tuple from OpenAI chat node
+        if isinstance(prompt, tuple) and len(prompt) > 0:
+            prompt = prompt[0]
+        elif isinstance(prompt, list) and len(prompt) > 0:
+            prompt = prompt[0]
+        
+        # Convert to string if it's not already
+        if prompt is not None:
+            prompt = str(prompt).strip()
+        
+        print(f"DEBUG: After processing - prompt type: {type(prompt)}, value: {repr(prompt)}")
+
         if prompt is None or prompt == "":
             raise ValueError("Prompt is required")
 
