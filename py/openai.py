@@ -64,11 +64,6 @@ DEFAULT_MODEL = "gemini-2.5-flash"
 class OpenAIChat:
     """OpenAI Chat node with support for text, images, and files"""
     
-    @staticmethod
-    def refresh_models(api_key: str):
-        """Deprecated - models are now hardcoded"""
-        print("[INFO] Models are now hardcoded, refresh not needed")
-        return DEFAULT_MODELS
     
     @classmethod
     def INPUT_TYPES(cls):
@@ -335,38 +330,13 @@ class OpenAICaptionImage:
         caption = response.choices[0].message.content.strip()
         return (caption,)
 
-
-class ModelListRefresh:
-    """Helper node to refresh the available models list"""
-    
-    @classmethod
-    def INPUT_TYPES(cls):
-        return {
-            "required": {
-                "client": ("MODELVERSE_API_CLIENT",),
-                "refresh": ("BOOLEAN", {"default": True, "tooltip": "Click to refresh models list"}),
-            }
-        }
-    
-    RETURN_TYPES = ("STRING",)
-    RETURN_NAMES = ("status",)
-    CATEGORY = "UCLOUD_MODELVERSE"
-    FUNCTION = "refresh_models_list"
-    
-    def refresh_models_list(self, client: Dict[str, str], refresh: bool) -> tuple:
-        """Refresh the models list and return status"""
-        return ("Models are now hardcoded - refresh not needed",)
-
-
 # Node registration
 NODE_CLASS_MAPPINGS = {
     "OpenAIChat": OpenAIChat,
     "OpenAICaptionImage": OpenAICaptionImage,
-    "ModelListRefresh": ModelListRefresh,
 }
 
 NODE_DISPLAY_NAME_MAPPINGS = {
     "OpenAIChat": "OpenAI Chat",
     "OpenAICaptionImage": "OpenAI Caption Image",
-    "ModelListRefresh": "🔄 Refresh Models List",
 }
