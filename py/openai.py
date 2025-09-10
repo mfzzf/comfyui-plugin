@@ -8,143 +8,74 @@ from PIL import Image
 from typing import Optional, List, Dict, Any
 from .modelverse_api.client import ModelverseClient
 
-# Default models list
+# Hardcoded models list
 DEFAULT_MODELS = [
-    "openai/gpt-5",
-    "openai/gpt-5-mini", 
-    "openai/gpt-4.1",
-    "gpt-4.1-mini",
-    "deepseek-ai/DeepSeek-V3.1",
-    "deepseek-ai/DeepSeek-R1",
-    "Qwen/Qwen3-32B",
-    "gemini-2.5-pro",
-    "gemini-2.5-flash",
-    "claude-4-opus",
-    "claude-4-sonnet",
-    "grok-4"
+    'ByteDance/doubao-1.5-thinking-vision-pro',
+    'ByteDance/doubao-seed-1.6',
+    'ByteDance/doubao-seed-1.6-thinking',
+    'Qwen/QwQ-32B',
+    'Qwen/Qwen-Image',
+    'Qwen/Qwen-Image-Edit',
+    'Qwen/Qwen3-235B-A22B',
+    'Qwen/Qwen3-30B-A3B',
+    'Qwen/Qwen3-32B',
+    'Qwen/Qwen3-Coder',
+    'Wan-AI/Wan2.2-I2V',
+    'Wan-AI/Wan2.2-T2V',
+    'baidu/ernie-4.5-turbo-128k',
+    'baidu/ernie-4.5-turbo-vl-32k',
+    'baidu/ernie-x1-turbo-32k',
+    'black-forest-labs/flux-kontext-max',
+    'black-forest-labs/flux-kontext-max/multi',
+    'black-forest-labs/flux-kontext-max/text-to-image',
+    'black-forest-labs/flux-kontext-pro',
+    'black-forest-labs/flux-kontext-pro/multi',
+    'black-forest-labs/flux-kontext-pro/text-to-image',
+    'black-forest-labs/flux.1-dev',
+    'claude-4-opus',
+    'claude-4-sonnet',
+    'deepseek-ai/DeepSeek-Prover-V2-671B',
+    'deepseek-ai/DeepSeek-R1',
+    'deepseek-ai/DeepSeek-R1-0528',
+    'deepseek-ai/DeepSeek-R1-Distill-Llama-70B',
+    'deepseek-ai/DeepSeek-V3-0324',
+    'deepseek-ai/DeepSeek-V3.1',
+    'gemini-2.5-flash',
+    'gemini-2.5-flash-image',
+    'gemini-2.5-pro',
+    'gpt-4.1-mini',
+    'grok-4',
+    'moonshotai/Kimi-K2-Instruct',
+    'openai/gpt-4.1',
+    'openai/gpt-5',
+    'openai/gpt-5-mini',
+    'openai/gpt-oss-120b',
+    'openai/gpt-oss-20b',
+    'qwen/qwen2.5-vl-72b-instruct',
+    'stepfun-ai/step1x-edit',
+    'zai-org/glm-4.5',
+    'zai-org/glm-4.5v'
 ]
 
 # Default selected model
 DEFAULT_MODEL = "gemini-2.5-flash"
 
-# Cache for models list
-_cached_models = None
-_models_initialized = False
-
-def debug_cache_state():
-    """Debug function to print cache state"""
-    global _cached_models
-    print(f"[DEBUG] Cache state: _cached_models = {_cached_models}")
-    if _cached_models is not None:
-        print(f"[DEBUG] Cache type: {type(_cached_models)}, length: {len(_cached_models)}")
-        print(f"[DEBUG] First 3 models: {_cached_models[:3] if len(_cached_models) > 0 else 'Empty'}")
-    else:
-        print(f"[DEBUG] Cache is None")
-
-def get_openai_models(api_key: str) -> List[str]:
-    """Fetch available models from OpenAI API"""
-    global _cached_models
-    
-    print(f"[DEBUG] get_openai_models called with api_key: {api_key[:10]}...")
-    debug_cache_state()
-    
-    # Return cached models if available
-    if _cached_models is not None:
-        print(f"[DEBUG] Returning cached models: {len(_cached_models)} models")
-        return _cached_models
-    
-    try:
-        print(f"[DEBUG] Making API call to fetch models...")
-        # Use OpenAI client to get models
-        client = openai.OpenAI(api_key=api_key,base_url="https://api.modelverse.cn/v1")
-        models_response = client.models.list()
-        
-        print(f"[DEBUG] API response received, processing models...")
-        # Get all available models and sort
-        chat_models = [model.id for model in models_response.data]
-        chat_models.sort()
-        
-        print(f"[DEBUG] Found {len(chat_models)} models from API")
-        print(f"[DEBUG] First 5 models: {chat_models[:5]}")
-        
-        # Cache the result
-        _cached_models = chat_models if chat_models else DEFAULT_MODELS
-        print(f"[DEBUG] Cached {len(_cached_models)} models")
-        debug_cache_state()
-        return _cached_models
-    except Exception as e:
-        print(f"[ERROR] Failed to fetch models from OpenAI: {e}")
-        # Return default models if API call fails
-        _cached_models = DEFAULT_MODELS
-        print(f"[DEBUG] Set cache to DEFAULT_MODELS due to error")
-        debug_cache_state()
-        return DEFAULT_MODELS
-
 
 class OpenAIChat:
     """OpenAI Chat node with support for text, images, and files"""
     
-    # Class variable to store the current models list for this node type
-    _current_models = DEFAULT_MODELS
-    
     @staticmethod
     def refresh_models(api_key: str):
-        """Refresh the cached models list with the given API key"""
-        global _cached_models
-        print(f"[DEBUG] refresh_models called with api_key: {api_key[:10]}...")
-        print(f"[DEBUG] Before refresh:")
-        debug_cache_state()
-        
-        try:
-            print(f"[DEBUG] Clearing cache...")
-            _cached_models = None  # Clear cache first
-            debug_cache_state()
-            
-            print(f"[DEBUG] Calling get_openai_models...")
-            _cached_models = get_openai_models(api_key)
-            print(f"[DEBUG] After get_openai_models:")
-            debug_cache_state()
-            
-            # Also update the class variable
-            OpenAIChat._current_models = _cached_models
-            print(f"Successfully refreshed models list: {len(_cached_models)} models available")
-            return _cached_models
-        except Exception as e:
-            print(f"[ERROR] Failed to refresh models: {e}")
-            _cached_models = DEFAULT_MODELS
-            OpenAIChat._current_models = DEFAULT_MODELS
-            print(f"[DEBUG] Set to DEFAULT_MODELS due to error:")
-            debug_cache_state()
-            return DEFAULT_MODELS
+        """Deprecated - models are now hardcoded"""
+        print("[INFO] Models are now hardcoded, refresh not needed")
+        return DEFAULT_MODELS
     
     @classmethod
     def INPUT_TYPES(cls):
-        # Dynamic models list that updates based on cache
-        # This is called every time the node is created/refreshed in the UI
-        global _cached_models
-        
-        print(f"[DEBUG] INPUT_TYPES called for OpenAIChat")
-        print(f"[DEBUG] Current cache state in INPUT_TYPES:")
-        debug_cache_state()
-        print(f"[DEBUG] Class _current_models: {cls._current_models}")
-        
-        # Priority: cached_models > class variable > defaults
-        if _cached_models is not None and _cached_models != DEFAULT_MODELS:
-            available_models = _cached_models
-            print(f"[INFO] Using global cached models: {len(available_models)} models available")
-        elif cls._current_models != DEFAULT_MODELS:
-            available_models = cls._current_models
-            print(f"[INFO] Using class models: {len(available_models)} models available")
-        else:
-            available_models = DEFAULT_MODELS
-            print(f"[INFO] Using default models: {len(available_models)} models")
-            
-        print(f"[DEBUG] Final available_models: {available_models}")
-        
         return {
             "required": {
                 "client": ("MODELVERSE_API_CLIENT",),
-                "model": (available_models, {"default": DEFAULT_MODEL}),
+                "model": (DEFAULT_MODELS, {"default": DEFAULT_MODEL}),
                 "user_prompt": ("STRING", {
                     "multiline": True,
                     "default": "What can you tell me about this?"
@@ -201,11 +132,7 @@ class OpenAIChat:
     @classmethod
     def IS_CHANGED(cls, **kwargs):
         """Tell ComfyUI that this node's inputs may change"""
-        global _cached_models
-        # Return a unique value to force refresh when models change
-        if _cached_models is not None:
-            return str(len(_cached_models))
-        return "default"
+        return "static"
 
     def chat(self, 
              client: Dict[str, str],
@@ -229,23 +156,8 @@ class OpenAIChat:
         # Create ModelverseClient instance to get the actual API key
         modelverse_client = ModelverseClient(api_key)
         
-        # Refresh models list if not cached yet or if this is the first time with this API key
-        global _cached_models
-        print(f"[DEBUG] In chat method, checking cache state:")
-        debug_cache_state()
-        
-        if _cached_models is None or _cached_models == DEFAULT_MODELS:
-            print("[INFO] Cache is empty or default, refreshing models list from API...")
-            self.refresh_models(modelverse_client.api_key)
-            print(f"[DEBUG] After refresh in chat method:")
-            debug_cache_state()
-        else:
-            print(f"[INFO] Using existing cache with {len(_cached_models)} models")
-        
         # Initialize OpenAI client with the API key from ModelverseClient
         openai_client = openai.OpenAI(api_key=modelverse_client.api_key,base_url="https://api.modelverse.cn/v1")
-        
-        # Model validation is handled at the input level, no need to check here
         
         # Build messages
         messages = []
@@ -443,41 +355,7 @@ class ModelListRefresh:
     
     def refresh_models_list(self, client: Dict[str, str], refresh: bool) -> tuple:
         """Refresh the models list and return status"""
-        print(f"[DEBUG] ModelListRefresh.refresh_models_list called with refresh={refresh}")
-        
-        if not refresh:
-            return ("Models refresh skipped",)
-            
-        api_key = client.get("api_key")
-        if not api_key:
-            return ("Error: No API key found in the client",)
-        
-        print(f"[DEBUG] About to refresh with API key: {api_key[:10]}...")
-        print(f"[DEBUG] Cache state before refresh:")
-        debug_cache_state()
-        
-        try:
-            # Create ModelverseClient instance
-            modelverse_client = ModelverseClient(api_key)
-            
-            # Refresh models using OpenAIChat's method
-            models = OpenAIChat.refresh_models(modelverse_client.api_key)
-            
-            print(f"[DEBUG] Cache state after refresh:")
-            debug_cache_state()
-            
-            status_msg = f"✅ Successfully refreshed! Found {len(models)} models.\n"
-            status_msg += f"Models: {', '.join(models[:10])}{'...' if len(models) > 10 else ''}\n"
-            status_msg += f"\n🔄 Global cache updated: {len(_cached_models) if _cached_models else 0} models"
-            status_msg += f"\n🏷️ Class models updated: {len(OpenAIChat._current_models)} models"
-            status_msg += "\n\n⚠️ IMPORTANT: Please add a new OpenAI Chat node to see the updated models list!"
-            status_msg += "\n(Or right-click existing node → 'Reload' if available)"
-            
-            return (status_msg,)
-            
-        except Exception as e:
-            print(f"[ERROR] Exception in refresh_models_list: {e}")
-            return (f"❌ Error refreshing models: {str(e)}",)
+        return ("Models are now hardcoded - refresh not needed",)
 
 
 # Node registration
