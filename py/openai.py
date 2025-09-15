@@ -56,9 +56,9 @@ DEFAULT_MODELS = [
     'openai/gpt-oss-120b',
     'openai/gpt-oss-20b',
     'qwen/qwen2.5-vl-72b-instruct',
-    'stepfun-ai/step1x-edit',
     'zai-org/glm-4.5',
-    'zai-org/glm-4.5v'
+    'zai-org/glm-4.5v',
+    'stepfun-ai/step1x-edit'
 ]
 
 # Default selected model
