@@ -5,7 +5,7 @@ import tempfile
 import io
 from .modelverse_api.client import ModelverseClient
 from .modelverse_api.utils import image_to_base64
-
+from comfy.comfy_types.node_typing import IO
 # Import VideoFromFile class for ComfyUI video handling
 try:
     # Try the newer import path first
@@ -34,20 +34,20 @@ class Modelverse_WanAII2V:
         return {
             "required": {
                 "client": ("MODELVERSE_API_CLIENT",),
-                "prompt": ("STRING", {"multiline": True, "default": "Convert to video","tooltip": "Text prompt to guide video generation"}),
+                "prompt": (IO.STRING, {"multiline": True, "default": "Convert to video","tooltip": "Text prompt to guide video generation"}),
             },
             "optional": {
-                "first_frame_image": ("IMAGE",),
-                "first_frame_url": ("STRING", {"default": "", "tooltip": "First frame image URL (use either this OR first_frame_image, not both)"}),
-                "last_frame_image": ("IMAGE",),
-                "last_frame_url": ("STRING", {"default": "", "tooltip": "Optional: URL for the last frame of the video"}),
-                "negative_prompt": ("STRING", {"multiline": True, "default": "low quality, blurry","tooltip": "Negative prompt to avoid unwanted content"}),
+                "first_frame_image": (IO.IMAGE,),
+                "first_frame_url": (IO.STRING, {"default": "", "tooltip": "First frame image URL (use either this OR first_frame_image, not both)"}),
+                "last_frame_image": (IO.IMAGE,),
+                "last_frame_url": (IO.STRING, {"default": "", "tooltip": "Optional: URL for the last frame of the video"}),
+                "negative_prompt": (IO.STRING, {"multiline": True, "default": "low quality, blurry","tooltip": "Negative prompt to avoid unwanted content"}),
                 "resolution": (["720P", "480P"], {"default": "720P", "tooltip": "Output video resolution"}),
-                "seed": ("INT", {"default": 0, "min": 0, "max": 2147483647, "tooltip": "Random seed for reproducible results"}),
+                "seed": (IO.INT, {"default": 0, "min": 0, "max": 2147483647, "tooltip": "Random seed for reproducible results"}),
             }
         }
 
-    RETURN_TYPES = ("VIDEO",)
+    RETURN_TYPES = (IO.VIDEO,)
     RETURN_NAMES = ("video",)
     FUNCTION = "generate_video"
     CATEGORY = "UCLOUD_MODELVERSE"
