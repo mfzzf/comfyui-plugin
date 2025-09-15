@@ -155,7 +155,7 @@ class ModelverseChat:
                     "step": 0.1
                 }),
                 "max_tokens": (IO.INT, {
-                    "default": 1000,
+                    "default": 65536,
                     "min": 1,
                     "max": 128000
                 }),
