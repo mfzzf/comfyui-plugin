@@ -77,7 +77,7 @@ class ModelverseChat:
         try:
             # Try to create a client and fetch models
             # Note: This will work if there's a valid API key available, otherwise fallback
-            client = OpenAI(base_url="https://api.modelverse.cn/v1")
+            client = OpenAI(base_url="https://api.modelverse.cn/v1",api_key="xxxsu")
             models_response = client.models.list()
             
             # Extract model IDs from the response
