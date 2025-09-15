@@ -68,12 +68,20 @@ DEFAULT_MODEL = "zai-org/glm-4.5"
 class ModelverseChat:
     """OpenAI Chat node with support for text, images, and files"""
     
+    # Class-level cache for models list
+    _cached_models = None
+    _cache_initialized = False
+    
     def __init__(self):
-        self._cached_models = None
+        pass
         
     @classmethod
     def get_models_list(cls):
         """Try to fetch models from ModelVerse API, fallback to default models if failed"""
+        # Return cached models if already fetched
+        if cls._cache_initialized:
+            return cls._cached_models
+        
         try:
             # Try to create a client and fetch models
             # Note: This will work if there's a valid API key available, otherwise fallback
@@ -89,15 +97,28 @@ class ModelverseChat:
                 
                 if model_ids:
                     print(f"ModelverseChat: Successfully fetched {len(model_ids)} models from API")
-                    return sorted(model_ids)  # Sort for better user experience
+                    cls._cached_models = sorted(model_ids)  # Sort for better user experience
+                    cls._cache_initialized = True
+                    return cls._cached_models
             
             # If no models found, fall back to default
             print("ModelverseChat: No models found in API response, using default models")
-            return DEFAULT_MODELS
+            cls._cached_models = DEFAULT_MODELS
+            cls._cache_initialized = True
+            return cls._cached_models
             
         except Exception as e:
             print(f"ModelverseChat: Failed to fetch models from API ({str(e)}), using default models")
-            return DEFAULT_MODELS
+            cls._cached_models = DEFAULT_MODELS
+            cls._cache_initialized = True
+            return cls._cached_models
+    
+    @classmethod
+    def clear_models_cache(cls):
+        """Clear the cached models list to force a refresh on next call"""
+        cls._cached_models = None
+        cls._cache_initialized = False
+        print("ModelverseChat: Models cache cleared")
     
     def display_message_on_node(self, message: str, node_id: str) -> None:
         """Display the current response message on the node UI."""
