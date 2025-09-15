@@ -22,7 +22,7 @@ class FluxKontextProNode:
             "required": {
                 "client": ("MODELVERSE_API_CLIENT",),
                 "prompt": (IO.STRING, {"multiline": True, "default": "", "tooltip": "Text description of the image to generate"}),
-                "images": ("IMAGE,IMAGE_LIST", {
+                "images": ("IMAGE_LIST", {
                     "tooltip": "The image(s) to edit from. If not included, use text-to-image mode.",
                     "forceInput": False,
                     "default": None
