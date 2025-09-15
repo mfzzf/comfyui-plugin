@@ -176,7 +176,8 @@ class ModelverseChat:
                     "default": None,
                     "tooltip": "Optional file(s) to use as context for the model. Accepts inputs from the OpenAI Input Files node."
                 }),
-                "response_format": (["text", "json_object"], {"default": "text"}),
+                # "response_format": (["text", "json_object"], {"default": "text"}),
+                "response_format": (["text"], {"default": "text"}),
                 "presence_penalty": (IO.FLOAT, {
                     "default": 0.0,
                     "min": -2.0,
