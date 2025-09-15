@@ -2,6 +2,7 @@ import io
 import os
 import json
 import openai
+from openai import OpenAI
 import base64
 import numpy as np
 from PIL import Image
@@ -61,14 +62,42 @@ DEFAULT_MODELS = [
 ]
 
 # Default selected model
-DEFAULT_MODEL = "gemini-2.5-flash"
+DEFAULT_MODEL = "zai-org/glm-4.5"
 
 
 class ModelverseChat:
     """OpenAI Chat node with support for text, images, and files"""
     
     def __init__(self):
-        pass
+        self._cached_models = None
+        
+    @classmethod
+    def get_models_list(cls):
+        """Try to fetch models from ModelVerse API, fallback to default models if failed"""
+        try:
+            # Try to create a client and fetch models
+            # Note: This will work if there's a valid API key available, otherwise fallback
+            client = OpenAI(base_url="https://api.modelverse.cn/v1")
+            models_response = client.models.list()
+            
+            # Extract model IDs from the response
+            if hasattr(models_response, 'data') and models_response.data:
+                model_ids = []
+                for model in models_response.data:
+                    if hasattr(model, 'id') and model.id:
+                        model_ids.append(model.id)
+                
+                if model_ids:
+                    print(f"ModelverseChat: Successfully fetched {len(model_ids)} models from API")
+                    return sorted(model_ids)  # Sort for better user experience
+            
+            # If no models found, fall back to default
+            print("ModelverseChat: No models found in API response, using default models")
+            return DEFAULT_MODELS
+            
+        except Exception as e:
+            print(f"ModelverseChat: Failed to fetch models from API ({str(e)}), using default models")
+            return DEFAULT_MODELS
     
     def display_message_on_node(self, message: str, node_id: str) -> None:
         """Display the current response message on the node UI."""
@@ -87,10 +116,13 @@ class ModelverseChat:
     
     @classmethod
     def INPUT_TYPES(cls):
+        # Get models list dynamically
+        available_models = cls.get_models_list()
+        
         return {
             "required": {
                 "client": ("MODELVERSE_API_CLIENT",),
-                "model": (DEFAULT_MODELS, {"default": DEFAULT_MODEL}),
+                "model": (available_models, {"default": DEFAULT_MODEL if DEFAULT_MODEL in available_models else available_models[0] if available_models else DEFAULT_MODEL}),
                 "user_prompt": (IO.STRING, {
                     "multiline": True,
                     "default": "What can you tell me about this?"
