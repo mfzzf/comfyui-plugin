@@ -22,7 +22,6 @@ class GPTImage1Node:
                 "size": (IO.STRING, {"default": "1024x1024", "tooltip": "e.g. 512x512, 1024x1024"}),
                 "num_requests": (IO.INT, {"default": 1, "min": 1, "max": 10, "step": 1, "display": "number"}),
                 "num_images": (IO.INT, {"default": 1, "min": 1, "max": 4, "step": 1, "display": "number"}),
-                "guidance_scale": (IO.FLOAT, {"default": 2.5, "min": 0.0, "max": 20.0, "step": 0.1, "display": "number"}),
                 "response_format": (["url", "b64_json"], {"default": "url"}),
             },
             "optional": {
@@ -42,7 +41,6 @@ class GPTImage1Node:
         size: str = "1024x1024",
         num_requests: int = 1,
         num_images: int = 1,
-        guidance_scale: float = 2.5,
         response_format: str = "url",
         negative_prompt: str = "",
     ):
@@ -58,7 +56,6 @@ class GPTImage1Node:
                     prompt=prompt,
                     num_images=num_images,
                     size=size,
-                    guidance_scale=guidance_scale,
                     negative_prompt=negative_prompt,
                     response_format=response_format,
                 )

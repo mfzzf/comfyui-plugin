@@ -13,7 +13,6 @@ class GPTImage1(BaseRequest):
     prompt: str = Field(..., description="Prompt text")
     num_images: Optional[int] = Field(default=1, ge=1, le=4, description="Number of images (n)")
     size: Optional[str] = Field(default="1024x1024", description="Output size e.g. 1024x1024")
-    guidance_scale: Optional[float] = Field(default=2.5, description="Guidance scale")
     negative_prompt: Optional[str] = Field(default="", description="Negative prompt")
     response_format: Optional[str] = Field(default="url", description='"url" or "b64_json"')
 
@@ -22,7 +21,7 @@ class GPTImage1(BaseRequest):
         prompt: str,
         num_images: Optional[int] = 1,
         size: Optional[str] = "1024x1024",
-        guidance_scale: Optional[float] = 2.5,
+        # guidance_scale removed per API behavior
         negative_prompt: Optional[str] = "",
         response_format: Optional[str] = "url",
         **kwargs,
@@ -31,7 +30,6 @@ class GPTImage1(BaseRequest):
         self.prompt = prompt
         self.num_images = num_images
         self.size = size
-        self.guidance_scale = guidance_scale
         self.negative_prompt = negative_prompt
         self.response_format = response_format
 
@@ -41,7 +39,6 @@ class GPTImage1(BaseRequest):
             "prompt": self.prompt,
             "n": self.num_images,
             "size": self.size,
-            "guidance_scale": self.guidance_scale,
             "negative_prompt": self.negative_prompt,
             "response_format": self.response_format,
         }
@@ -56,7 +53,6 @@ class GPTImage1(BaseRequest):
             "prompt",
             "n",
             "size",
-            "guidance_scale",
             "negative_prompt",
             "response_format",
         ]
