@@ -13,7 +13,7 @@ class GPTImage1(BaseRequest):
     prompt: str = Field(..., description="Prompt text")
     num_images: Optional[int] = Field(default=1, ge=1, le=4, description="Number of images (n)")
     size: Optional[str] = Field(default="1024x1024", description="Output size e.g. 1024x1024")
-    negative_prompt: Optional[str] = Field(default="", description="Negative prompt")
+    # negative_prompt removed due to API rejecting this parameter
     response_format: Optional[str] = Field(default="url", description='"url" or "b64_json"')
 
     def __init__(
@@ -22,7 +22,7 @@ class GPTImage1(BaseRequest):
         num_images: Optional[int] = 1,
         size: Optional[str] = "1024x1024",
         # guidance_scale removed per API behavior
-        negative_prompt: Optional[str] = "",
+        # negative_prompt removed per API behavior
         response_format: Optional[str] = "url",
         **kwargs,
     ):
@@ -30,7 +30,6 @@ class GPTImage1(BaseRequest):
         self.prompt = prompt
         self.num_images = num_images
         self.size = size
-        self.negative_prompt = negative_prompt
         self.response_format = response_format
 
     def build_payload(self) -> dict:
@@ -39,7 +38,6 @@ class GPTImage1(BaseRequest):
             "prompt": self.prompt,
             "n": self.num_images,
             "size": self.size,
-            "negative_prompt": self.negative_prompt,
             "response_format": self.response_format,
         }
         return self._remove_empty_fields(payload)
@@ -53,6 +51,5 @@ class GPTImage1(BaseRequest):
             "prompt",
             "n",
             "size",
-            "negative_prompt",
             "response_format",
         ]

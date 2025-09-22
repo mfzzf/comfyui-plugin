@@ -24,9 +24,7 @@ class GPTImage1Node:
                 "num_images": (IO.INT, {"default": 1, "min": 1, "max": 4, "step": 1, "display": "number"}),
                 "response_format": (["url", "b64_json"], {"default": "url"}),
             },
-            "optional": {
-                "negative_prompt": (IO.STRING, {"multiline": True, "default": ""}),
-            },
+            "optional": {},
         }
 
     RETURN_TYPES = (IO.IMAGE,)
@@ -42,7 +40,6 @@ class GPTImage1Node:
         num_requests: int = 1,
         num_images: int = 1,
         response_format: str = "url",
-        negative_prompt: str = "",
     ):
 
         if not prompt:
@@ -56,7 +53,6 @@ class GPTImage1Node:
                     prompt=prompt,
                     num_images=num_images,
                     size=size,
-                    negative_prompt=negative_prompt,
                     response_format=response_format,
                 )
             )
