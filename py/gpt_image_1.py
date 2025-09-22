@@ -64,8 +64,47 @@ class GPTImage1Node:
                 print("WARN:", "No output in current request. Skipping...")
                 continue
 
-            # Default to URL output format per API
-            output_images = imageurl2tensor(data_list)
+            # Auto-detect output type: prefer URL if present, else decode b64_json
+            has_url = False
+            try:
+                for item in data_list:
+                    if isinstance(item, dict) and item.get("url"):
+                        has_url = True
+                        break
+            except Exception:
+                has_url = False
+
+            if has_url:
+                try:
+                    output_images = imageurl2tensor(data_list)
+                except Exception:
+                    print("WARN:", "Failed to load URL images; attempting b64_json decode.")
+                    has_url = False  # fall through to b64 decode
+
+            if not has_url:
+                images = []
+                for item in data_list:
+                    if not isinstance(item, dict):
+                        continue
+                    b64v = item.get("b64_json") or item.get("b64")
+                    if not b64v:
+                        continue
+                    if isinstance(b64v, str) and b64v.startswith("data:"):
+                        try:
+                            b64v = b64v.split(",", 1)[1]
+                        except Exception:
+                            pass
+                    try:
+                        img_bytes = base64.b64decode(b64v)
+                        pil_img = decode_image(img_bytes)
+                        images.append(pil_img)
+                    except Exception:
+                        continue
+
+                if not images:
+                    print("WARN:", "No decodable base64 image found.")
+                    continue
+                output_images = images2tensor(images)
 
             output_images_list.append(output_images)
 
