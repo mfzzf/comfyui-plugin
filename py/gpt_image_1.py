@@ -22,7 +22,6 @@ class GPTImage1Node:
                 "size": (IO.STRING, {"default": "1024x1024", "tooltip": "e.g. 512x512, 1024x1024"}),
                 "num_requests": (IO.INT, {"default": 1, "min": 1, "max": 10, "step": 1, "display": "number"}),
                 "num_images": (IO.INT, {"default": 1, "min": 1, "max": 4, "step": 1, "display": "number"}),
-                "response_format": (["url", "b64_json"], {"default": "url"}),
             },
             "optional": {},
         }
@@ -39,7 +38,6 @@ class GPTImage1Node:
         size: str = "1024x1024",
         num_requests: int = 1,
         num_images: int = 1,
-        response_format: str = "url",
     ):
 
         if not prompt:
@@ -53,7 +51,6 @@ class GPTImage1Node:
                     prompt=prompt,
                     num_images=num_images,
                     size=size,
-                    response_format=response_format,
                 )
             )
             for i in range(num_requests)
@@ -67,29 +64,8 @@ class GPTImage1Node:
                 print("WARN:", "No output in current request. Skipping...")
                 continue
 
-            if response_format == "url":
-                output_images = imageurl2tensor(data_list)
-            else:
-                images = []
-                for item in data_list:
-                    b64v = item.get("b64_json") or item.get("b64")
-                    if not b64v:
-                        continue
-                    if isinstance(b64v, str) and b64v.startswith("data:"):
-                        try:
-                            b64v = b64v.split(",", 1)[1]
-                        except Exception:
-                            pass
-                    try:
-                        img_bytes = base64.b64decode(b64v)
-                        pil_img = decode_image(img_bytes)
-                        images.append(pil_img)
-                    except Exception:
-                        continue
-                if not images:
-                    print("WARN:", "No decodable base64 image found.")
-                    continue
-                output_images = images2tensor(images)
+            # Default to URL output format per API
+            output_images = imageurl2tensor(data_list)
 
             output_images_list.append(output_images)
 
