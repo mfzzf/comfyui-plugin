@@ -6,14 +6,24 @@ import io
 from PIL import Image
 
 
-def _tensor_to_png_file(image: Tensor, filename: str) -> Tuple[str, bytes, str]:
-    """Convert a ComfyUI tensor image to a PNG file tuple for requests files."""
+def _tensor_to_png_file(image: Tensor, filename: str) -> Tuple[str, bytes, str] | None:
+    """Convert a ComfyUI tensor image (3D or 4D) to a PNG file tuple for requests files."""
     if image is None:
         return None
-    # If batch, take first
-    if hasattr(image, 'shape') and len(image.shape) == 4:
-        image = image[0]
-    pil_img = tensor2images(image)[0]
+    # Keep batch if present; tensor2images expects a batch dimension
+    try:
+        if hasattr(image, 'shape') and len(image.shape) == 3:
+            # add batch dim
+            img_batch = image.unsqueeze(0)
+        else:
+            img_batch = image
+        pil_img = tensor2images(img_batch)[0]
+    except Exception:
+        # Fallback: attempt naive conversion
+        from PIL import Image as _Image
+        import numpy as _np
+        arr = (image.cpu().numpy() * 255.0).clip(0, 255).astype('uint8')
+        pil_img = _Image.fromarray(arr)
     with io.BytesIO() as bio:
         pil_img.save(bio, format="PNG")
         data = bio.getvalue()
@@ -103,4 +113,3 @@ class GPTImage1Edit(BaseRequest):
             "output_format",
             "output_compression",
         ]
-

@@ -101,5 +101,5 @@ NODE_CLASS_MAPPINGS = {
 }
 
 NODE_DISPLAY_NAME_MAPPINGS = {
-    "NanoBanana": "Gemini2.5FlashImage",
+    "NanoBanana": "Modelverse Gemini 2.5 Flash Image",
 }
