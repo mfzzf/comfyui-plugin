@@ -19,11 +19,15 @@ class GPTImage1Node:
             "required": {
                 "client": ("MODELVERSE_API_CLIENT",),
                 "prompt": (IO.STRING, {"multiline": True, "default": "a beautiful flower"}),
-                "size": (IO.STRING, {"default": "1024x1024", "tooltip": "e.g. 512x512, 1024x1024"}),
+                "size": (["1024x1024", "1024x1536", "1536x1024"], {"default": "1024x1024"}),
                 "num_requests": (IO.INT, {"default": 1, "min": 1, "max": 10, "step": 1, "display": "number"}),
                 "num_images": (IO.INT, {"default": 1, "min": 1, "max": 4, "step": 1, "display": "number"}),
             },
-            "optional": {},
+            "optional": {
+                "quality": (["", "low", "medium", "high"], {"default": ""}),
+                "output_format": (["png", "jpeg"], {"default": "png"}),
+                "output_compression": (IO.INT, {"default": 100, "min": 0, "max": 100, "step": 1, "display": "number"}),
+            },
         }
 
     RETURN_TYPES = (IO.IMAGE,)
@@ -38,6 +42,9 @@ class GPTImage1Node:
         size: str = "1024x1024",
         num_requests: int = 1,
         num_images: int = 1,
+        quality: str = "",
+        output_format: str = "png",
+        output_compression: int = 100,
     ):
 
         if not prompt:
@@ -51,6 +58,9 @@ class GPTImage1Node:
                     prompt=prompt,
                     num_images=num_images,
                     size=size,
+                    quality=quality if quality != "" else None,
+                    output_format=output_format,
+                    output_compression=output_compression,
                 )
             )
             for i in range(num_requests)
